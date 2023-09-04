@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ganss.Excel;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -7,6 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using datalvl.models;
 
 namespace lvl2
 {
@@ -63,7 +65,10 @@ namespace lvl2
                     l++;
                 }
                 matches[3] = parse_data(matches[3]);
-            
+                iuh_model iuh = new iuh_model(matches.ToArray());
+                ExcelMapper mapper = new ExcelMapper("ИЭ.xlsx");
+
+
             }
         }
 

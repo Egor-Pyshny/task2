@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "form", "test2\form.csproj",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "lvl2", "lvl2\lvl2.csproj", "{879E0E31-A64C-48AC-B343-66620969C322}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "datalvl", "datalvl\datalvl.csproj", "{0D97591F-DA5C-402A-87BA-7B2EA48C3E32}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{879E0E31-A64C-48AC-B343-66620969C322}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{879E0E31-A64C-48AC-B343-66620969C322}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{879E0E31-A64C-48AC-B343-66620969C322}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D97591F-DA5C-402A-87BA-7B2EA48C3E32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D97591F-DA5C-402A-87BA-7B2EA48C3E32}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D97591F-DA5C-402A-87BA-7B2EA48C3E32}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D97591F-DA5C-402A-87BA-7B2EA48C3E32}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
