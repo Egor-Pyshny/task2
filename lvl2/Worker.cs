@@ -17,7 +17,7 @@ namespace lvl2
     {
         public async void StartWorkAsync(){
             Setup();
-            Timer timer = new Timer(DoWork, null, 0, 30 * 60000);
+            Timer timer = new Timer(DoWork, null, 0, env.timer_period_minutes * 60000);
         }
 
         private void Setup()
@@ -33,7 +33,7 @@ namespace lvl2
         }
 
         public void DoWork(object st) {
-
+            Console.WriteLine(DateTime.Now.TimeOfDay.ToString());
             List<string> correct_files = new List<string>();
             try
             {
@@ -43,38 +43,66 @@ namespace lvl2
                         if (check_files(f))
                         {
                             correct_files.Add(f.Name);
-                            env.files.Add(f);
                         }
                     }
                 }             
             }
             catch(Exception e){ }
-
             foreach (string filename in correct_files) {
-                if (filename.Contains("ИЭ")) parse_iuh(filename); else parse_tuh();
+                parse_file(filename);
             }
         }
 
         private bool check_files(FileInfo info)
         {
-            bool res;
             DateTime modified = info.LastWriteTime;
             string name = info.Name;
-
-            return res;
+            foreach (FileInfo fileInfo in env.files) {
+                if (fileInfo.Name == name) {
+                    if (fileInfo.LastWriteTime == modified)
+                    {
+                        return false;
+                    }
+                    else if (fileInfo.LastWriteTime > modified) {
+                        env.files.Remove(fileInfo);
+                        env.files.Add(info);
+                        return true;
+                    }
+                }
+            }
+            env.files.Add(info);
+            return true;
         }
 
-        public void parse_iuh(string filename)
+        public void parse_file(string filename)
         {
+            Type model_type = null;
+            Type setting = typeof(env);
+            string type_mod = null;
+            if (filename.Contains("ИЭ"))
+            {
+                model_type = typeof(iuh_model);
+                type_mod = "iuh";
+            }
+            else if (filename.Contains("ТЭ"))
+            {
+                model_type = typeof(tuh_model);
+                type_mod = "tuh";
+            }
+            string[] fields = (string[])setting.GetField("fields_" + type_mod).GetValue(null);
+            string[] possible_endings = (string[])setting.GetField("possible_endings_" + type_mod).GetValue(null);
+            string excel_path = (string)setting.GetField("excel_path_" + type_mod).GetValue(null);
+            string excel_sheetname = (string)setting.GetField("excel_sheetname_" + type_mod).GetValue(null);
+            string necessary_field = (string)setting.GetField("necessary_field_" + type_mod).GetValue(null);
             string path = env.working_directory_path + "\\" + filename;
             using (StreamReader reader = new StreamReader(path))
             {
                 var context = reader.ReadToEnd();
-                List<string> matches = new List<string>();
-                foreach (string field in env.fields_iuh)
+                Dictionary<string , string> matches = new Dictionary<string, string>();
+                foreach (string field in fields)
                 {
                     string tmp = context;
-                    foreach (string ending in env.possible_endings_iuh)
+                    foreach (string ending in possible_endings)
                     {
                         if (!field.Contains(ending)) tmp = tmp.Replace(ending, env.delimiter);
                     }
@@ -82,41 +110,43 @@ namespace lvl2
                     string match = Regex.Match(tmp, pattern).Value;
                     if (match != "")
                     {
-                        matches.Add(field == "Дата создания:" ? parse_data(match.Remove(0, field.Length).Trim()) : match.Remove(0, field.Length).Trim());
+                        matches.Add(field ,env.data_fields.Contains(field) ? parse_data(match.Remove(0, field.Length).Trim()) : match.Remove(0, field.Length).Trim());
                     }
-                    else if (field == "УНП")
+                    else if (field == necessary_field)
                     {
                         break;
                     }
-                    else matches.Add(match);
+                    else matches.Add(field ,match);
                 }
-                /*string[] patterns = new string[] {
-                    $@"{fields[0]}[^.]*",
-                };*/
-                if (matches[1] != "")
+                if (matches[necessary_field] != "")
                 {
-                    ExcelMapper excelMapper = new ExcelMapper(env.excel_iuh_path);
-                    List<iuh_model> iuh = new ExcelMapper(env.excel_iuh_path).Fetch<iuh_model>().ToList();
-                    iuh_model temp = (iuh_model)matches;
+                    ExcelMapper excelMapper = new ExcelMapper(excel_path);
+                    
+                    var iuh = new ExcelMapper(excel_path).Fetch().ToList();
+                    object temp = Convert.ChangeType(matches,model_type);
                     for (int i = 0; i < iuh.Count; i++)
                     {
+                        //разобраться с записью в таблицу и чтением
+                        /*var dsad = Convert.ChangeType(iuh[i],model_type);
                         if (iuh[i].ynp == temp.ynp)
                         {
                             iuh.RemoveAt(i);
                             break;
-                        }
+                        }*/
                     }
                     iuh.Add(temp);
-                    excelMapper.Save(env.excel_iuh_path, iuh, env.excel_iuh_sheetname);
+                    excelMapper.Save(excel_path, iuh, excel_sheetname);
                 }
                 else
                 {
-                    //проверить все диретории и создать если нет для ошибок
-                    //записать куда то там
+                    using (var stream = File.Create(env.project_dirrectory + $"\\{filename}")) {
+                        byte[] data = Encoding.Default.GetBytes(context);
+                        stream.Write(data,0,data.Length);
+                    }
+
                 }
             }
         }
-
 
         private string parse_data(string data)
         {
@@ -138,7 +168,5 @@ namespace lvl2
             };
             return tmp[0] + "." + dict[tmp[1]] + "." + tmp[2] + " " + ((tmp.Length>4)?(tmp[4]):(""));
         }
-
-        public void parse_tuh() { }
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace datalvl.models
 {
-    class tuh_model
+    public static class tuh_model
     {
     }
 }
