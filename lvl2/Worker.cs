@@ -16,24 +16,52 @@ namespace lvl2
     public class Worker
     {
         public async void StartWorkAsync(){
+            Setup();
             Timer timer = new Timer(DoWork, null, 0, 30 * 60000);
         }
 
-        public void DoWork(object st) {     
+        private void Setup()
+        {
+            var files = Directory.GetFiles(env.project_dirrectory);
+            if (!files.Contains(env.check_file)) {
+                Directory.CreateDirectory(env.error_directory);
+                File.Create(env.check_file);
+                if (files.Contains(env.yesterday_check_file)) {
+                    File.Delete(env.yesterday_check_file);
+                }
+            }
+        }
+
+        public void DoWork(object st) {
+
             List<string> correct_files = new List<string>();
             try
             {
                 var dir = new DirectoryInfo(env.working_directory_path);
                 foreach (FileInfo f in dir.GetFiles()) {
                     if (Regex.IsMatch(f.Name, $@"^РЕГИСТРАЦИЯ.*(?:ИЭ|ТЭ){f.Extension}$")) {
-                        correct_files.Add(f.Name);
+                        if (check_files(f))
+                        {
+                            correct_files.Add(f.Name);
+                            env.files.Add(f);
+                        }
                     }
                 }             
             }
             catch(Exception e){ }
+
             foreach (string filename in correct_files) {
                 if (filename.Contains("ИЭ")) parse_iuh(filename); else parse_tuh();
             }
+        }
+
+        private bool check_files(FileInfo info)
+        {
+            bool res;
+            DateTime modified = info.LastWriteTime;
+            string name = info.Name;
+
+            return res;
         }
 
         public void parse_iuh(string filename)
@@ -64,21 +92,7 @@ namespace lvl2
                 }
                 /*string[] patterns = new string[] {
                     $@"{fields[0]}[^.]*",
-                    $@"{fields[1]}.*",
-                    $@"{fields[2]}.*",
-                    $@"{fields[3]}.*",
-                    $@"{fields[4]}.*",
-                    $@"{fields[5]}.*",
-                    $@"{fields[6]}.*",
-                };
-                int l = 0;
-                foreach (string pattern1 in patterns) {
-                    matches.Add(Regex.Match(context, pattern1).Value);
-                    if(matches[l]!="")
-                        matches[l] = matches[l].Remove(0, fields[l].Length).Trim();
-                    l++;
-                }
-                matches[3] = parse_data(matches[3]);  */
+                };*/
                 if (matches[1] != "")
                 {
                     ExcelMapper excelMapper = new ExcelMapper(env.excel_iuh_path);
