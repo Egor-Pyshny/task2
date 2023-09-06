@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using Ganss.Excel;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using ColumnAttribute = Ganss.Excel.ColumnAttribute;
 
 namespace Data.models

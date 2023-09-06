@@ -44,6 +44,18 @@ namespace Data
             "Полное",
             "ТерминалID"
         };
+        public static string[] possible_endings_tuh = {
+            "Наименование",
+            "ID",
+            "Лимит",
+            "Кол-во",
+            "Ответственный",
+            "Адрес",
+            "Организация",
+            "Дата",
+            "Лицензия",
+            "Действут",
+        };
         public static List<FileInfo> files = new List<FileInfo>();
         public static string[] fields_iuh = {
             "Полное наименование:",

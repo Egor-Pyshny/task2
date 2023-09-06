@@ -42,7 +42,7 @@ namespace Logic
                 foreach (string str in env.possible_models.Keys) {
                     formats += ("|" + str);
                 }
-                formats.Remove(0, 1);
+                formats = formats.Remove(0, 1);
                 var dir = new DirectoryInfo(env.working_directory_path);
                 AutoItX.Run($"explorer.exe {env.working_directory_path}","");
                 int i = 1;
@@ -57,11 +57,14 @@ namespace Logic
                 }             
             }
             catch(Exception e){ }
+            int prev_pos = 0;
             foreach (KeyValuePair<string,int> pair in correct_files) {
-                parse_file(pair);
+                parse_file(pair, prev_pos);
+                prev_pos = pair.Value;
             }
             AutoItX.WinClose($"{env.working_directory_path}");
         }
+
 
         private bool check_files(FileInfo info)
         {
@@ -84,10 +87,8 @@ namespace Logic
             return true;
         }
 
-        private void parse_file(KeyValuePair<string, int> filename)
+        private void parse_file(KeyValuePair<string, int> filename, int prev_pos)
         {
-            Task<string> task = new Task<string>(() => open_and_read(filename));
-            task.Start();
             Type setting = typeof(env);
             ExcelSaverBase excelSaver;
             string type_mod = null;
@@ -102,9 +103,8 @@ namespace Logic
             string necessary_field = (string)setting.GetField("necessary_field_" + type_mod).GetValue(null);
             Type saver_type = Type.GetType("Logic.ExcelSaver_" + type_mod);
             excelSaver = (ExcelSaverBase) Activator.CreateInstance(saver_type);
-            string path = env.working_directory_path + "\\" + filename;
-            task.Wait();
-            string context = task.Result;
+            string path = env.working_directory_path + "\\" + filename.Key;            
+            string context = open_and_read(filename, prev_pos);
             Dictionary<string , string> matches = new Dictionary<string, string>();
             foreach (string field in fields)
             {
@@ -114,13 +114,14 @@ namespace Logic
                     if (!field.Contains(ending)) tmp = tmp.Replace(ending, env.delimiter);
                 }
                 string pattern = $@"{field}[^{env.delimiter}]*";
-                string match = Regex.Match(tmp, pattern).Value;
+                string match = Regex.Match(tmp, pattern).Value;              
                 if (match != "")
                 {
                     matches.Add(field ,env.data_fields.Contains(field) ? parse_data(match.Remove(0, field.Length).Trim()) : match.Remove(0, field.Length).Trim());
                 }
                 else if (field == necessary_field)
                 {
+                    matches.Add(field, match);
                     break;
                 }
                 else matches.Add(field ,match);
@@ -131,16 +132,21 @@ namespace Logic
             }
             else
             {
-                using (var stream = File.Create(env.project_dirrectory + $"\\{filename}")) {
+                using (var stream = File.Create(env.project_dirrectory + $"\\{filename.Key}")) {
                     byte[] data = Encoding.Default.GetBytes(context);
                     stream.Write(data,0,data.Length);
                 }
             }
         }
 
-        private string open_and_read(KeyValuePair<string, int> pair)
+        private string open_and_read(KeyValuePair<string, int> pair,int prev_pos)
         {
+            AutoItX.ClipPut("");
             AutoItX.WinWait(env.today_date);
+            for (int i = 0; i < prev_pos; i++)
+            {
+                AutoItX.Send("{UP}");
+            }
             for (int i = 0; i < pair.Value; i++)
             {
                 AutoItX.Send("{DOWN}");
@@ -148,13 +154,14 @@ namespace Logic
             AutoItX.Send("{UP}");
             AutoItX.Send("{ENTER}");            
             //pair.Key + " – Блокнот";
-            Thread.Sleep(200);
+            Thread.Sleep(500);
             var title = AutoItX.WinGetTitle("[ACTIVE]");
             AutoItX.Send("^a");
             AutoItX.Send("^c");
+            string buffer = "";
+            while (buffer == "") { buffer = AutoItX.ClipGet(); }
             AutoItX.WinClose(title);
-            string bufer = AutoItX.ClipGet();
-            return bufer;
+            return buffer;
         }
 
         private string parse_data(string data)
