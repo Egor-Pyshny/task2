@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{879E0E31-A64C-48AC-B343-66620969C322}</ProjectGuid>
+    <ProjectGuid>{0D97591F-DA5C-402A-87BA-7B2EA48C3E32}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>lvl2</RootNamespace>
-    <AssemblyName>lvl2</AssemblyName>
+    <RootNamespace>datalvl</RootNamespace>
+    <AssemblyName>Data</AssemblyName>
     <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -40,7 +40,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Worker.cs" />
+    <Compile Include="env.cs" />
+    <Compile Include="models\iuh_model.cs" />
+    <Compile Include="models\tuh_model.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="BouncyCastle.Cryptography, Version=2.0.0.0, Culture=neutral, PublicKeyToken=072edcf4a5328938, processorArchitecture=MSIL">
@@ -136,12 +138,6 @@
       <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\datalvl\datalvl.csproj">
-      <Project>{0d97591f-da5c-402a-87ba-7b2ea48c3e32}</Project>
-      <Name>datalvl</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -28,7 +28,7 @@ namespace test2
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            lvl2.Worker a = new lvl2.Worker();
+            Logic.Worker a = new Logic.Worker();
             a.StartWorkAsync();
         }
     }

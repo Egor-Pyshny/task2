@@ -8,10 +8,11 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using datalvl.models;
-using datalvl;
+using Data.models;
+using Data;
+using AutoIt;
 
-namespace lvl2
+namespace Logic
 {
     public class Worker
     {
@@ -32,25 +33,34 @@ namespace lvl2
             }
         }
 
-        public void DoWork(object st) {
+        private void DoWork(object st) {
             Console.WriteLine(DateTime.Now.TimeOfDay.ToString());
-            List<string> correct_files = new List<string>();
+            Dictionary<string, int> correct_files = new Dictionary<string, int>();
             try
             {
+                string formats = "";
+                foreach (string str in env.possible_models.Keys) {
+                    formats += ("|" + str);
+                }
+                formats.Remove(0, 1);
                 var dir = new DirectoryInfo(env.working_directory_path);
+                AutoItX.Run($"explorer.exe {env.working_directory_path}","");
+                int i = 1;
                 foreach (FileInfo f in dir.GetFiles()) {
-                    if (Regex.IsMatch(f.Name, $@"^РЕГИСТРАЦИЯ.*(?:ИЭ|ТЭ){f.Extension}$")) {
+                    if (Regex.IsMatch(f.Name, $@"^РЕГИСТРАЦИЯ.*(?:{formats}){f.Extension}$")) {
                         if (check_files(f))
                         {
-                            correct_files.Add(f.Name);
+                            correct_files.Add(f.Name, i);
                         }
                     }
+                    i++;
                 }             
             }
             catch(Exception e){ }
-            foreach (string filename in correct_files) {
-                parse_file(filename);
+            foreach (KeyValuePair<string,int> pair in correct_files) {
+                parse_file(pair);
             }
+            AutoItX.WinClose($"{env.working_directory_path}");
         }
 
         private bool check_files(FileInfo info)
@@ -74,78 +84,77 @@ namespace lvl2
             return true;
         }
 
-        public void parse_file(string filename)
+        private void parse_file(KeyValuePair<string, int> filename)
         {
-            Type model_type = null;
+            Task<string> task = new Task<string>(() => open_and_read(filename));
+            task.Start();
             Type setting = typeof(env);
+            ExcelSaverBase excelSaver;
             string type_mod = null;
-            if (filename.Contains("ИЭ"))
-            {
-                model_type = typeof(iuh_model);
-                type_mod = "iuh";
-            }
-            else if (filename.Contains("ТЭ"))
-            {
-                model_type = typeof(tuh_model);
-                type_mod = "tuh";
+            foreach (KeyValuePair<string, string> pair in env.possible_models) {
+                if (filename.Key.Contains(pair.Key)) {
+                    type_mod = pair.Value;
+                    break;
+                }
             }
             string[] fields = (string[])setting.GetField("fields_" + type_mod).GetValue(null);
             string[] possible_endings = (string[])setting.GetField("possible_endings_" + type_mod).GetValue(null);
-            string excel_path = (string)setting.GetField("excel_path_" + type_mod).GetValue(null);
-            string excel_sheetname = (string)setting.GetField("excel_sheetname_" + type_mod).GetValue(null);
             string necessary_field = (string)setting.GetField("necessary_field_" + type_mod).GetValue(null);
+            Type saver_type = Type.GetType("Logic.ExcelSaver_" + type_mod);
+            excelSaver = (ExcelSaverBase) Activator.CreateInstance(saver_type);
             string path = env.working_directory_path + "\\" + filename;
-            using (StreamReader reader = new StreamReader(path))
+            task.Wait();
+            string context = task.Result;
+            Dictionary<string , string> matches = new Dictionary<string, string>();
+            foreach (string field in fields)
             {
-                var context = reader.ReadToEnd();
-                Dictionary<string , string> matches = new Dictionary<string, string>();
-                foreach (string field in fields)
+                string tmp = context;
+                foreach (string ending in possible_endings)
                 {
-                    string tmp = context;
-                    foreach (string ending in possible_endings)
-                    {
-                        if (!field.Contains(ending)) tmp = tmp.Replace(ending, env.delimiter);
-                    }
-                    string pattern = $@"{field}[^{env.delimiter}]*";
-                    string match = Regex.Match(tmp, pattern).Value;
-                    if (match != "")
-                    {
-                        matches.Add(field ,env.data_fields.Contains(field) ? parse_data(match.Remove(0, field.Length).Trim()) : match.Remove(0, field.Length).Trim());
-                    }
-                    else if (field == necessary_field)
-                    {
-                        break;
-                    }
-                    else matches.Add(field ,match);
+                    if (!field.Contains(ending)) tmp = tmp.Replace(ending, env.delimiter);
                 }
-                if (matches[necessary_field] != "")
+                string pattern = $@"{field}[^{env.delimiter}]*";
+                string match = Regex.Match(tmp, pattern).Value;
+                if (match != "")
                 {
-                    ExcelMapper excelMapper = new ExcelMapper(excel_path);
-                    
-                    var iuh = new ExcelMapper(excel_path).Fetch().ToList();
-                    object temp = Convert.ChangeType(matches,model_type);
-                    for (int i = 0; i < iuh.Count; i++)
-                    {
-                        //разобраться с записью в таблицу и чтением
-                        /*var dsad = Convert.ChangeType(iuh[i],model_type);
-                        if (iuh[i].ynp == temp.ynp)
-                        {
-                            iuh.RemoveAt(i);
-                            break;
-                        }*/
-                    }
-                    iuh.Add(temp);
-                    excelMapper.Save(excel_path, iuh, excel_sheetname);
+                    matches.Add(field ,env.data_fields.Contains(field) ? parse_data(match.Remove(0, field.Length).Trim()) : match.Remove(0, field.Length).Trim());
                 }
-                else
+                else if (field == necessary_field)
                 {
-                    using (var stream = File.Create(env.project_dirrectory + $"\\{filename}")) {
-                        byte[] data = Encoding.Default.GetBytes(context);
-                        stream.Write(data,0,data.Length);
-                    }
-
+                    break;
+                }
+                else matches.Add(field ,match);
+            }
+            if (matches[necessary_field] != "")
+            {
+                excelSaver.Excel_Save(matches);                    
+            }
+            else
+            {
+                using (var stream = File.Create(env.project_dirrectory + $"\\{filename}")) {
+                    byte[] data = Encoding.Default.GetBytes(context);
+                    stream.Write(data,0,data.Length);
                 }
             }
+        }
+
+        private string open_and_read(KeyValuePair<string, int> pair)
+        {
+            AutoItX.WinWait(env.today_date);
+            for (int i = 0; i < pair.Value; i++)
+            {
+                AutoItX.Send("{DOWN}");
+            }
+            AutoItX.Send("{UP}");
+            AutoItX.Send("{ENTER}");            
+            //pair.Key + " – Блокнот";
+            Thread.Sleep(200);
+            var title = AutoItX.WinGetTitle("[ACTIVE]");
+            AutoItX.Send("^a");
+            AutoItX.Send("^c");
+            AutoItX.WinClose(title);
+            string bufer = AutoItX.ClipGet();
+            return bufer;
         }
 
         private string parse_data(string data)

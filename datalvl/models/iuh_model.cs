@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ColumnAttribute = Ganss.Excel.ColumnAttribute;
 
-namespace datalvl.models
+namespace Data.models
 {
     public class iuh_model
     {
@@ -38,16 +38,16 @@ namespace datalvl.models
         [Column("Статус")]
         public string status { get; set; } = "Работает";
 
-        public static explicit operator iuh_model(List<string> v)
+        public static explicit operator iuh_model(Dictionary<string, string> dict)
         {
             iuh_model iuh = new iuh_model();
-            iuh.full_name = v[0];
-            iuh.ynp = v[1];
-            iuh.creation_date = v[3];
-            iuh.day_summ = v[2];
-            iuh.day_amount = v[5];
-            iuh.month_sum = v[4];
-            iuh.month_amount = v[6];
+            iuh.full_name = dict["Полное наименование:"];
+            iuh.ynp = dict["УНП:"];
+            iuh.creation_date = dict["Дата создания:"];
+            iuh.day_summ = dict["Сумма в день:"];
+            iuh.day_amount = dict["Кол-во в день:"];
+            iuh.month_sum = dict["Сумма в месяц:"];
+            iuh.month_amount = dict["Кол-во в месяц:"];
             iuh.responsible = "";
             iuh.status = "Работает";
             return iuh;
