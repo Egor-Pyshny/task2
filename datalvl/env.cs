@@ -18,8 +18,6 @@ namespace Data
         public static string delimiter = "☢";
         public static string project_dirrectory = Environment.CurrentDirectory.ToString();
         public static string error_directory = project_dirrectory + "\\Errors_" +today_date;
-        public static string check_file = project_dirrectory + "\\first_run_" + today_date + ".txt";
-        public static string yesterday_check_file = project_dirrectory + "||first_run_" + yesterday + ".txt";
         public static Dictionary<string, string> possible_models = new Dictionary<string, string>(){
             { "ИЭ","iuh"},
             { "ТЭ","tuh"},

@@ -21,16 +21,13 @@ namespace Logic
         private void Setup()
         {
             var files = Directory.GetFiles(env.project_dirrectory);
-            if (!files.Contains(env.check_file)) {
-                Directory.CreateDirectory(env.error_directory);
-                File.Create(env.check_file);
-                if (files.Contains(env.yesterday_check_file)) {
-                    File.Delete(env.yesterday_check_file);
-                }
-            }
+            if (!File.Exists(env.excel_path_iuh)) File.Create(env.excel_path_iuh).Close();
+            if (!File.Exists(env.excel_path_tuh)) File.Create(env.excel_path_tuh).Close();
+            if (!Directory.Exists(env.error_directory)) Directory.CreateDirectory(env.error_directory);
         }
 
         private void DoWork(object st) {
+            if (!Directory.Exists(env.working_directory_path)) return;
             AutoItX.WinClose($"{env.today_date}");
             Dictionary<string, int> correct_files = new Dictionary<string, int>();
             try
