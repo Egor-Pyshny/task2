@@ -1,14 +1,11 @@
-﻿using Ganss.Excel;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Data.models;
 using Data;
 using AutoIt;
 
@@ -16,7 +13,7 @@ namespace Logic
 {
     public class Worker
     {
-        public async void StartWorkAsync(){
+        public async Task StartWorkAsync(){
             Setup();
             Timer timer = new Timer(DoWork, null, 0, env.timer_period_minutes * 60000);
         }
@@ -34,7 +31,7 @@ namespace Logic
         }
 
         private void DoWork(object st) {
-            Console.WriteLine(DateTime.Now.TimeOfDay.ToString());
+            AutoItX.WinClose($"{env.today_date}");
             Dictionary<string, int> correct_files = new Dictionary<string, int>();
             try
             {
@@ -62,7 +59,8 @@ namespace Logic
                 parse_file(pair, prev_pos);
                 prev_pos = pair.Value;
             }
-            AutoItX.WinClose($"{env.working_directory_path}");
+            AutoItX.WinWait(env.today_date);
+            AutoItX.WinClose($"{env.today_date}");
         }
 
 
@@ -119,11 +117,6 @@ namespace Logic
                 {
                     matches.Add(field ,env.data_fields.Contains(field) ? parse_data(match.Remove(0, field.Length).Trim()) : match.Remove(0, field.Length).Trim());
                 }
-                else if (field == necessary_field)
-                {
-                    matches.Add(field, match);
-                    break;
-                }
                 else matches.Add(field ,match);
             }
             if (matches[necessary_field] != "")
@@ -132,10 +125,11 @@ namespace Logic
             }
             else
             {
-                using (var stream = File.Create(env.project_dirrectory + $"\\{filename.Key}")) {
-                    byte[] data = Encoding.Default.GetBytes(context);
-                    stream.Write(data,0,data.Length);
+                try
+                {
+                    File.Copy(env.working_directory_path + $"\\{filename.Key}", env.error_directory + $"\\{filename.Key}");
                 }
+                catch (System.IO.IOException) { }
             }
         }
 
@@ -153,7 +147,6 @@ namespace Logic
             }
             AutoItX.Send("{UP}");
             AutoItX.Send("{ENTER}");            
-            //pair.Key + " – Блокнот";
             Thread.Sleep(500);
             var title = AutoItX.WinGetTitle("[ACTIVE]");
             AutoItX.Send("^a");

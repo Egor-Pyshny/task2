@@ -8,19 +8,19 @@ namespace Data.models
         [Column("ID")]
         public string id { get; set; }
 
-        [Column("Лимит транзакций в сутки")]
+        [Column("Лимит сутки")]
         public string day_transaction_limit { get; set; }
 
-        [Column("Кол-во сумма в сутки")]
+        [Column("Кол-во сумма сутки")]
         public string day_sum { get; set; }
 
-        [Column("Лимит транзакций в месяц")]
+        [Column("Лимит месяц")]
         public string month_transaction_limit { get; set; }
 
-        [Column("Кол-во сумма в месяц")]
+        [Column("Кол-во сумма месяц")]
         public string month_sum { get; set; }
 
-        [Column("Адрес")]
+        [Column("Точка установки")]
         public string address { get; set; }
 
         [Column("Дата установки")]
@@ -29,7 +29,7 @@ namespace Data.models
         [Column("Лицензия")]
         public string license { get; set; }
 
-        [Column("Действут до")]
+        [Column("Дата окончания лицензии")]
         public string valid_date { get; set; }
 
         public static explicit operator tuh_model(Dictionary<string, string> dict)
